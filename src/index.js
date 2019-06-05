@@ -22,6 +22,7 @@ const parseResources = require('./parseResources');
 const { createDefaultApiKey, detectEncoding, randomId } = require('./utils');
 const authFunctionNameExtractor = require('./authFunctionNameExtractor');
 const requestBodyValidator = require('./requestBodyValidator');
+const createEdgeEvent = require('./createEdgeEvent')
 
 /*
   I'm against monolithic code like this file
@@ -402,20 +403,8 @@ class Offline {
 
     if (!fn) return; 
 
-    const event = {
-      Records: [
-        {
-          cf: {
-            config: {
-              eventType
-            },
-            request
-          }
-        }
-      ]
-    };
-
-    const callback = Function.prototype
+    const event = createEdgeEvent(eventType, request);
+    const callback = Function.prototype;
     const context = {}
 
     try {
