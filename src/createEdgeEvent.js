@@ -1,4 +1,12 @@
-module.exports = function createEdgeEvent(eventType, request) {
+const qs = require('qs')
+
+module.exports = function createEdgeEvent(eventType, originalRequest) {
+  const request = Object.assign({}, originalRequest, {
+    querystring: qs.stringify(originalRequest.query),
+    uri: originalRequest.path,
+    headers: convertHeaders(originalRequest.headers)
+  })
+
   return {
     Records: [
       {
@@ -6,9 +14,7 @@ module.exports = function createEdgeEvent(eventType, request) {
           config: {
             eventType
           },
-          request: Object.assign({}, request, {
-            headers: convertHeaders(request.headers)
-          })
+          request
         }
       }
     ]

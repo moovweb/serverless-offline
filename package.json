@@ -124,6 +124,7 @@
     "jsonpath-plus": "^0.19.0",
     "jsonschema": "^1.2.4",
     "jsonwebtoken": "^8.5.1",
+    "qs": "^6.7.0",
     "trim-newlines": "^3.0.0",
     "velocityjs": "^1.1.3"
   },
