@@ -380,6 +380,51 @@ class Offline {
     });
   }
 
+  _getEdgeFunctions() {
+    const serviceRuntime = this.service.provider.runtime;
+    const functions = {};
+
+    Object.keys(this.service.functions).forEach(key => {
+      const fun = this.service.getFunction(key);
+
+      if (fun.lambdaAtEdge) {
+        const servicePath = path.join(this.serverless.config.servicePath, this.options.location);
+        const funOptions = functionHelper.getFunctionOptions(fun, key, servicePath, serviceRuntime);
+        functions[fun.lambdaAtEdge.eventType] = functionHelper.createHandler(funOptions, this.options);
+      }
+    })
+
+    return functions;
+  }
+
+  _runEdgeFunction(eventType, request) {
+    const fn = this.edgeFunctions[eventType];
+
+    if (!fn) return; 
+
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              eventType
+            },
+            request
+          }
+        }
+      ]
+    };
+
+    const callback = Function.prototype
+    const context = {}
+
+    try {
+      fn(event, context, callback);
+    } catch (e) {
+      console.error(`Error in edge handler for ${eventType}`, e)
+    }
+  }
+
   _createRoutes() {
     let serviceRuntime = this.service.provider.runtime;
     const defaultContentType = 'application/json';
@@ -422,8 +467,9 @@ class Offline {
       }
     }
 
-    Object.keys(this.service.functions).forEach(key => {
+    this.edgeFunctions = this._getEdgeFunctions(this.service)
 
+    Object.keys(this.service.functions).forEach(key => {
       const fun = this.service.getFunction(key);
       const funName = key;
       const servicePath = path.join(this.serverless.config.servicePath, this.options.location);
@@ -638,6 +684,8 @@ class Offline {
             catch (err) {
               return this._reply500(response, `Error while loading ${funName}`, err);
             }
+
+            this._runEdgeFunction('viewer-request', request)
 
             /* REQUEST TEMPLATE PROCESSING (event population) */
 
